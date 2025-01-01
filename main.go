@@ -1,32 +1,37 @@
 package main
 
 import (
-	"log"
+	"mcp-server/easytcp"
+	"mcp-server/logger"
 	"mcp-server/server"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
 
-	serialTransport := server.NewSerialTransport("/dev/ttyUSB0", 115200)
+	serialTransport := server.NewSerialTransport("COM1", 9600)
 
 	// 创建服务器实例
-	srv := server.NewServer(serialTransport)
+
+	srv := server.NewServer(serialTransport, &easytcp.ServerOption{})
+	srv.Srv.Use(logger.RecoverMiddleware(logger.Ins()), logger.LogMiddleware)
+	easytcp.SetLogger(logger.Ins())
+	// register a route
 
 	// 启动服务器
+	logger.Ins().Infoln("start server...")
 	if err := srv.Start(); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		logger.Ins().Fatalf("Failed to start server: %v", err)
 	}
 
-	// 等待信号以优雅退出
-	waitForSignal()
-
-	// 停止服务器
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	<-sigCh
 	if err := srv.Stop(); err != nil {
-		log.Printf("Error stopping server: %v", err)
+		logger.Ins().Errorf("server stopped err: %s", err)
 	}
-}
-
-func waitForSignal() {
-	// 实现信号处理逻辑，等待 Ctrl+C 等信号
-	select {}
+	time.Sleep(time.Second * 3)
 }

@@ -5,14 +5,15 @@ import (
 )
 
 type Server struct {
-	srv       *easytcp.Server
+	Srv       *easytcp.Server
 	transport Transport
 }
 
 // NewServer 创建一个新的服务器实例
-func NewServer(transport Transport) *Server {
+func NewServer(transport Transport, serverOption *easytcp.ServerOption) *Server {
 	return &Server{
 		transport: transport,
+		Srv:       easytcp.NewServer(serverOption),
 	}
 }
 
@@ -23,9 +24,6 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	// 创建 TCP 服务器
-	s.srv = easytcp.NewServer(&easytcp.ServerOption{})
-
 	// 开始接受连接
 	go func() {
 		for {
@@ -34,7 +32,7 @@ func (s *Server) Start() error {
 				// TODO: 处理错误，可以添加日志
 				continue
 			}
-			s.srv.HandleConn(conn)
+			s.Srv.HandleConn(conn)
 		}
 	}()
 
@@ -43,8 +41,8 @@ func (s *Server) Start() error {
 
 // Stop 停止服务器
 func (s *Server) Stop() error {
-	if s.srv != nil {
-		s.srv.Stop()
+	if s.Srv != nil {
+		s.Srv.Stop()
 	}
 	return s.transport.Close()
 }

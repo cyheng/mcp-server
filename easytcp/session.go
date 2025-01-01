@@ -154,15 +154,16 @@ func (s *session) readInbound(router *Router, timeout time.Duration) {
 				break
 			}
 		}
+		// TODO: "read buffer %s \n", hex.EncodeToString(buffer[0:n])
 		reqMsg, err := s.packer.Unpack(s.conn)
 		if err != nil {
 			logMsg := fmt.Sprintf("session %s unpack inbound packet err: %s", s.id, err)
 			if err == io.EOF {
 				_log.Tracef(logMsg)
-			} else {
-				_log.Errorf(logMsg)
+				break
 			}
-			break
+			_log.Errorf(logMsg)
+			continue
 		}
 		if reqMsg == nil {
 			continue

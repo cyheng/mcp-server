@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"io"
 	"net"
 	"time"
@@ -11,17 +12,20 @@ import (
 type SerialTransport struct {
 	port     string
 	baudRate int
-	conn     io.ReadWriteCloser
+	conn     serial.Port
+	connChan chan net.Conn // 添加连接通道
 }
 
-// 创建串口 transport
-func NewSerialTransport(port string, baudRate int) *SerialTransport {
-	return &SerialTransport{
-		port:     port,
-		baudRate: baudRate,
+func (s *SerialTransport) Accept() (net.Conn, error) {
+	// 阻塞等待连接通道的数据
+	conn, ok := <-s.connChan
+	if !ok {
+		return nil, errors.New("connection channel closed")
 	}
+	return conn, nil
 }
 
+// 在 Listen 中初始化
 func (s *SerialTransport) Listen() error {
 	mode := &serial.Mode{
 		BaudRate: s.baudRate,
@@ -33,12 +37,20 @@ func (s *SerialTransport) Listen() error {
 	}
 
 	s.conn = port
+	s.connChan = make(chan net.Conn, 1)
+
+	// 立即放入一个连接
+	s.connChan <- &serialConn{s.conn}
+
 	return nil
 }
 
-func (s *SerialTransport) Accept() (net.Conn, error) {
-	// 串口不需要 Accept,直接返回一个包装了串口连接的 net.Conn
-	return &serialConn{s.conn}, nil
+// 创建串口 transport
+func NewSerialTransport(port string, baudRate int) *SerialTransport {
+	return &SerialTransport{
+		port:     port,
+		baudRate: baudRate,
+	}
 }
 
 func (s *SerialTransport) Close() error {
