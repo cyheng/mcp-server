@@ -6,9 +6,7 @@ import (
 )
 
 func main() {
-	// 创建串口传输，设置串口名称和波特率
-	// Windows 上串口名称类似 "COM1"
-	// Linux 上串口名称类似 "/dev/ttyUSB0"
+
 	serialTransport := server.NewSerialTransport("/dev/ttyUSB0", 115200)
 
 	// 创建服务器实例

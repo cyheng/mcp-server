@@ -156,7 +156,7 @@ func (s *Server) acceptLoop() error {
 	}
 }
 
-// handleConn creates a new session with `conn`,
+// HandleConn creates a new session with `conn`,
 // handles the message through the session in different goroutines,
 // and waits until the session's closed, then close the `conn`.
 func (s *Server) HandleConn(conn net.Conn) {
